@@ -352,7 +352,64 @@ def generate_capture_context(
 
     return data
 
+def pos_generate_capture_context(
+    api_url,
+    secret_key,
+    tracker_token,
+    origin_url="http://localhost:8070",
+):
+    """
+    Generate the SafePay/CyberSource capture context for POS.
+    """
 
+    print("📡 POS Generate Capture Context called")
+
+    payload = {
+        "payload": {
+            "origin": origin_url,
+        }
+    }
+
+    response = requests.post(
+        f"{api_url}/order/payments/v3/{tracker_token}",
+        headers={
+            "X-SFPY-MERCHANT-SECRET": secret_key,
+            "Content-Type": "application/json",
+        },
+        json=payload,
+        timeout=30,
+    )
+
+    print(
+        "📡 SafePay POS capture context status:",
+        response.status_code,
+    )
+
+    print(
+        "📡 SafePay POS capture context response:",
+        response.text,
+    )
+
+    response.raise_for_status()
+
+    data = response.json()
+
+    capture_context_jwt = (
+        data
+        .get("data", {})
+        .get("action", {})
+        .get("flex", {})
+        .get("capture_context_jwt")
+    )
+
+    if not capture_context_jwt:
+        raise ValueError(
+            "SafePay did not return capture_context_jwt."
+        )
+
+    print("✅ POS Capture Context JWT extracted")
+
+    return capture_context_jwt
 # =========================================================
 # PROCESS TRANSIENT TOKEN
 # =========================================================
